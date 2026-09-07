@@ -434,7 +434,7 @@ const checkedInPayload = path.join(integrationRoot, '.dsh-bundled-skills', 'arch
 let unzipContentsIdentical = false;
 let canonicalZipBytes = 'not-asserted';
 if (skipFreshZipRebuild) {
-  receipt.zipContainerNote = 'Windows validates committed ZIP contents with checkout text EOL normalization; canonical container-byte reproduction is owned by Linux CI.';
+  receipt.zipContainerNote = 'Windows extracts the committed ZIP and checks packed-vs-static payload only; ZIP content equality is not asserted on Windows. Linux CI owns fresh-vs-committed ZIP equality.';
   const checkedDir = path.join(scratch, 'checked');
   fs.mkdirSync(checkedDir);
   fs.copyFileSync(committedZip, path.join(checkedDir, 'committed.zip'));
@@ -443,7 +443,8 @@ if (skipFreshZipRebuild) {
   if (!compared.ok) {
     fail('zero-regression', 'packed skill drifted from the checked-in static payload', compared);
   }
-  unzipContentsIdentical = true;
+  // packedSkill vs checkedInPayload does not compare the extracted ZIP.
+  unzipContentsIdentical = 'not-asserted-on-windows';
 } else {
   const freshZip = path.join(scratch, 'fresh.zip');
   const freshDir = path.join(scratch, 'fresh');
@@ -476,7 +477,7 @@ pass('zero-regression', {
   archifyPackageBlob: pkgBlob.stdout.trim(),
   unzipContentsIdentical,
   canonicalZipBytes,
-  crossPlatformZipCheck: 'extracted-content',
+  crossPlatformZipCheck: skipFreshZipRebuild ? 'extraction-only-equality-skipped' : 'extracted-content',
   ...(skipFreshZipRebuild ? { freshZipRebuildSkipped: true, checkoutTextEolNormalized: true } : {}),
   skillsCli: skillsList.stdout.trim().slice(0, 500),
 });

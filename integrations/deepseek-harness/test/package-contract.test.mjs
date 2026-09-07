@@ -78,7 +78,7 @@ test('adapter delegates only to DSH public Skill-filesystem surface', () => {
   assert.match(source, /export const inject = \['skills'\]/);
   assert.match(source, /export const Config = skillFilesystem\.Config/);
   assert.match(source, /return skillFilesystem\.apply\(ctx, config\)/);
-  assert.match(source, /'\.dsh-bundled-skills'/);
+  assert.match(fs.readFileSync(path.join(integrationRoot, 'lib', 'resolve-skill-root.js'), 'utf8'), /'\.dsh-bundled-skills'/);
   assert.doesNotMatch(source, /child_process|spawn\(|exec\(|fetch\(|https?:\/\//);
 });
 
@@ -102,7 +102,10 @@ test('distribution receipt separates canonical ZIP bytes from cross-platform con
     'utf8',
   );
   assert.match(source, /canonicalZipBytes/);
-  assert.match(source, /crossPlatformZipCheck:\s*'extracted-content'/);
+  assert.match(source, /crossPlatformZipCheck: skipFreshZipRebuild \? 'extraction-only-equality-skipped' : 'extracted-content'/);
+  const windows = source.slice(source.indexOf('if (skipFreshZipRebuild)'), source.indexOf('} else {', source.indexOf('if (skipFreshZipRebuild)')));
+  assert.match(windows, /unzipContentsIdentical = 'not-asserted-on-windows'/);
+  assert.doesNotMatch(windows, /unzipContentsIdentical = true/);
   assert.doesNotMatch(source, /zipContainerBytesReproducible/);
   assert.doesNotMatch(source, /rsync\/zip are not on GitHub Windows runners/);
 });
